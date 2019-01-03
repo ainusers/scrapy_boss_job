@@ -28,15 +28,16 @@ class JobSpider(scrapy.Spider):
         }
 
         # 获取职位信息列表中当前条
-        for i,job in enumerate(job_lists):
+        for job in job_lists:
             # 加载数据保存项
             job_item = ScrapyBossJobItem()
             # 数据解析
-            urls = job.xpath(".//div[@class='job-primary']/div[@class='info-primary']/h3/a/@href").extract()
-            kas = job.xpath(".//div[@class='job-primary']/div[@class='info-primary']/h3/a/@ka").extract()
-            lids = job.xpath(".//div[@class='job-primary']/div[@class='info-primary']/h3/a/@data-lid").extract()
+            urls = job.xpath(".//div[@class='job-primary']/div[@class='info-primary']/h3/a/@href").extract_first()
+            kas = job.xpath(".//div[@class='job-primary']/div[@class='info-primary']/h3/a/@ka").extract_first()
+            lids = job.xpath(".//div[@class='job-primary']/div[@class='info-primary']/h3/a/@data-lid").extract_first()
             # 职位拼接
             url = 'https://www.zhipin.com' + ''.join(urls) + '?ka=' + ''.join(kas) + '&lid=' + ''.join(lids)
+            print(url)
             response = requests.get(url,headers = header)  # 发送请求
             soup = BeautifulSoup(response.text, 'lxml')
             # 组装属性
@@ -59,11 +60,11 @@ class JobSpider(scrapy.Spider):
                 job_item['company_name'] = company_namex.get_text().strip()
                 job_item['work_address'] = xwork_address.get_text().strip()
                 # 累了你就歇一会
-                time.sleep(20)
+                time.sleep(100)
                 # 提交管道
                 yield job_item
         # 下一页数据
-        next_link = response.xpath("//div[@class='job-list']/div[@class='page']/a[@class='next']/@href").extract()
+        next_link = response.xpath("//div[@class='job-list']/div[@class='page']/a[@class='next']/@href")
         if next_link:
             next_link = next_link[0]
             yield scrapy.Request("https://www.zhipin.com/job_detail/?query=%E6%B5%8B%E8%AF%95&scity=101010100" + next_link,
